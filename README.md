@@ -1,3 +1,4 @@
 # SMART_AI
 # Smart_AI
-malai aaudaina 
+Welcome to repo of SmartAI ,please share your idea on Echonet ,what the actual work of echonet on this project. 
+Thanks for opening this repo.
