@@ -59,6 +59,7 @@ def main():
                     "power":power,
                     "channel_id":i
                 })
+                
                 print(insertResponse)
             else:
                 print ("sesnor error")
