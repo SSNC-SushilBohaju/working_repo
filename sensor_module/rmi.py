@@ -16,7 +16,7 @@ class SmartClient(object):
         ct_data.main()       
         return "excute CT senosr  service"
 smart = SmartClient()
-daemon = Pyro4.Daemon(host="192.168.2.54", port=5150)
+daemon = Pyro4.Daemon(host="192.168.2.97", port=5150)
 Pyro4.Daemon.serveSimple(
     { smart: "test.SmartClient" },
     ns=False,
