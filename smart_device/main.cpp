@@ -2,9 +2,11 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "householdsolarpowergeneration.h"
+#include "echonet/householdsolarpowergeneration.h"
 #include <bits/getopt_core.h>
 #include <bits/types/sigset_t.h>
+#include <uecho/controller.h>
+
 
 void usage()
 {
@@ -16,11 +18,13 @@ void usage()
 
 void uecho_household_solor_power_generating_node_messagelitener(uEchoNode *obj, uEchoMessage *msg)
 {
-  uecho_household_solor_power_generation_printrequest(msg);
+  Household household;
+  household.uecho_household_solor_power_generation_printrequest(msg);
 }
 
 int main(int argc, char *argv[])
 {
+  Household household;
   bool verbose_mode;
   int manifacture_code;
   int c;
@@ -68,12 +72,12 @@ int main(int argc, char *argv[])
   if (!node)
     return EXIT_FAILURE;
 
-  if (verbose_mode)
+  if (verbose_mode || !verbose_mode)
   {
     uecho_node_setmessagelistener(node, uecho_household_solor_power_generating_node_messagelitener);
   }
 
-  obj = uecho_household_solor_power_generation_new();
+  obj = household.uecho_household_solor_power_generation_new();
   if (!obj)
   {
     uecho_node_delete(node);
@@ -91,7 +95,6 @@ int main(int argc, char *argv[])
   {
     return EXIT_FAILURE;
   }
-
   while (uecho_node_isrunning(node))
   {
     sigset_t sig_set;

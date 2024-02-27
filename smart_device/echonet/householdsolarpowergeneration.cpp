@@ -6,27 +6,30 @@
 #include <uecho/node.h>
 #include <cstdint>
 #include <uecho/misc.h>
-
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_OBJECT_CODE 0x027901
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_ON 0x30
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_OFF 0x31
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_RESET 0x00
-
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_OPERATION_STATUS 0x80
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_SYSTEM_INTERCONNECTION_INFORMATION 0xD0
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_INSTANTANEOUS_ELECTRICITY_GENERATION 0xE0
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION 0xE1
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_RESETTING_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION 0xE2
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_SOLD 0xE3
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_RESETTING_CUMULATIVE_AMOUT_OF_ELECTRICITY_SOLD 0xE4
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_POWER_GENERATION_OUTPUT_LIMIT_SETTING_1 0xE5
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_POWER_GENERATION_OUTPUT_LIMIT_SETTING_2 0xE6
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_LIMIT_SETTING_FOR_AMOUNT_OF_ELECTRICITY_SOLD 0xE7
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_RATED_POWER_GENERATION_OUTPUT_INTERCONNECTED 0xE8
-#define HOUSEHOLD_SOLAR_POWER_GENERATION_RATED_POWER_GENERATION_OUTPUT_INDEPENDENT 0xE9
+#include <modbus.h>
+#include <errno.h>
+#include "householdsolarpowergeneration.h"
 
 typedef uint8_t byte;
-void uecho_household_solor_power_generation_printrequest(uEchoMessage *msg)
+
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_OBJECT_CODE = 0x027901;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_ON = 0x30;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_OFF = 0x31;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_RESET = 0x00;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_OPERATION_STATUS = 0x80;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_SYSTEM_INTERCONNECTION_INFORMATION = 0xD0;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_INSTANTANEOUS_ELECTRICITY_GENERATION = 0xE0;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION = 0xE1;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_RESETTING_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION = 0xE2;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_SOLD = 0xE3;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_RESETTING_CUMULATIVE_AMOUT_OF_ELECTRICITY_SOLD = 0xE4;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_POWER_GENERATION_OUTPUT_LIMIT_SETTING_1 = 0xE5;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_POWER_GENERATION_OUTPUT_LIMIT_SETTING_2 = 0xE6;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_LIMIT_SETTING_FOR_AMOUNT_OF_ELECTRICITY_SOLD = 0xE7;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_RATED_POWER_GENERATION_OUTPUT_INTERCONNECTED = 0xE8;
+const int Household::HOUSEHOLD_SOLAR_POWER_GENERATION_RATED_POWER_GENERATION_OUTPUT_INDEPENDENT = 0xE9;
+
+void Household::uecho_household_solor_power_generation_printrequest(uEchoMessage *msg)
 {
   uEchoProperty *prop;
   size_t opc, n;
@@ -50,7 +53,7 @@ void uecho_household_solor_power_generation_printrequest(uEchoMessage *msg)
   printf("\n");
 }
 
-void uecho_household_solor_power_generating_object_messagelitener(uEchoObject *obj, uEchoMessage *msg)
+void Household::uecho_household_solor_power_generating_object_messagelitener(uEchoObject *obj, uEchoMessage *msg)
 {
   uecho_household_solor_power_generation_printrequest(msg);
 }
@@ -67,42 +70,36 @@ bool uecho_household_solor_power_generation_propertyrequesthandler(uEchoObject *
     printf("Bad Request\n");
     return false;
   }
+  if(esv == uecho_esv_isreadrequest(esv)){
+    byte Watt[2];
+    int powerLevel =  100; // Example value, replace with actual logic
+    printf("test");
+    uecho_integer2byte(powerLevel, Watt, sizeof(Watt));
+    printf("%02X",Watt);
+    // Set the property data to the response
+    uecho_property_setdata(prop, Watt, sizeof(Watt));
+    return uecho_property_announce(prop);
+    
+  }
   status = edt[0];
   switch (status)
   {
-  case HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_ON:
+  case Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_ON:
     printf("POWER = ON\n");
     break;
-  case HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_OFF:
+  case Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_OFF:
     printf("POWER = OFF\n");
     break;
-  case HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_RESET:
+  case Household::HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_RESET:
     printf("resetting cumulative amount of electric energy\n");
     break;
+
   default:
     printf("POWER = %02X\n", status);
     break;
   }
 
   return true;
-}
-
-/*::::::::::::::::::::::::::Change Integer value to Bytes::::::::::::::::::::::::::*/
-
-void setIntValueTo4Bytes(uint32_t value, uint8_t *array)
-{
-  // Convert the integer value to a  4-byte array representation
-  array[0] = (value >> 24) & 0xFF;
-  array[1] = (value >> 16) & 0xFF;
-  array[2] = (value >> 8) & 0xFF;
-  array[3] = value & 0xFF;
-}
-
-void setShortValueTo2Bytes(uint16_t value, uint8_t *array)
-{
-  // Convert the  16-bit integer value to a  2-byte array representation
-  array[0] = (value >> 8) & 0xFF; // Higher byte
-  array[1] = value & 0xFF;        // Lower byte
 }
 
 /*::::::::::::::::::::::::::Calculation for Data::::::::::::::::::::::::::*/
@@ -117,7 +114,7 @@ float cummulativeamountofelectricitygenerate(void)
   return 666666;
 }
 
-uEchoObject *uecho_household_solor_power_generation_new(void)
+uEchoObject* Household::uecho_household_solor_power_generation_new(void)
 {
   uEchoObject *obj;
   byte prop[32];
@@ -134,12 +131,13 @@ uEchoObject *uecho_household_solor_power_generation_new(void)
 
   obj = uecho_device_new();
   uecho_object_setmanufacturercode(obj, 0xFFFFF0);
-  uecho_object_setcode(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_OBJECT_CODE);
+  uecho_object_setcode(obj, Household::HOUSEHOLD_SOLAR_POWER_GENERATION_OBJECT_CODE);
 
   /*::::::::::::::::::::::::::set property of echo object::::::::::::::::::::::::::*/
 
   uecho_object_setproperty(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_OPERATION_STATUS, uEchoPropertyAttrReadWrite);
   prop[0] = HOUSEHOLD_SOLAR_POWER_GENERATION_PROPERTY_POWER_ON;
+  uecho_object_addproperty(obj, prop);
   uecho_object_setpropertydata(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_OPERATION_STATUS, prop, 1);
   uecho_object_setpropertywriterequesthandler(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_OPERATION_STATUS, uecho_household_solor_power_generation_propertyrequesthandler);
 
@@ -150,13 +148,12 @@ uEchoObject *uecho_household_solor_power_generation_new(void)
 
   /*::::::::::::::::::::::::::set property of echo object for get request::::::::::::::::::::::::::*/
 
-  uecho_object_setpropertydata(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_INSTANTANEOUS_ELECTRICITY_GENERATION, Watt, 2);
-  uecho_object_setpropertydata(obj, HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION, Cummulative_Energy, 4);
-
+  uecho_object_setpropertydata(obj, Household::HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_INSTANTANEOUS_ELECTRICITY_GENERATION, Watt, 2);
+  uecho_object_setpropertydata(obj, Household::HOUSEHOLD_SOLAR_POWER_GENERATION_MEASURED_CUMULATIVE_AMOUT_OF_ELECTRICITY_GENERATION, Cummulative_Energy, 4);
   return obj;
 }
 
-bool uecho_household_solor_power_generation_delete(uEchoObject *obj)
+bool Household::uecho_household_solor_power_generation_delete(uEchoObject *obj)
 {
 
   return uecho_object_delete(obj);
